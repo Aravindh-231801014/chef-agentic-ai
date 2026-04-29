@@ -71,13 +71,36 @@ def planner_agent(goal):
 # ---- FEATURE FUNCTIONS ----
 
 def generate_recipe_ai(name, ingredients, cuisine, servings, context=""):
-    prompt = f"Expert Chef: Generate a detailed {cuisine} recipe for {name} ({servings} servings) using these ingredients if provided: {ingredients}. Context: {context}. Format with Title, Ingredients, and Steps."
-    res = get_llm_response(prompt, max_tokens=800)
+    prompt = f"""
+    Expert Chef Identity: You are a world-class chef specialized in {cuisine} cuisine.
+    
+    Task: Generate a detailed {cuisine} recipe for '{name}' ({servings} servings).
+    User Ingredients (use these if provided): {ingredients}
+    
+    Domain Knowledge Context (Reference only): {context}
+    
+    CRITICAL INSTRUCTIONS:
+    1. If the provided context is for a different cuisine than {cuisine}, IGNORE the context and use your own knowledge to create an authentic {cuisine} recipe.
+    2. Do NOT mention that there is a 'mistake' in the ingredients or context. Just provide the best {cuisine} recipe possible.
+    3. Ensure the flavor profile, techniques, and terminology are authentic to {cuisine}.
+    4. Format the output with clear sections: Title, Ingredients, and Steps.
+    """
+    res = get_llm_response(prompt, max_tokens=1000)
     if res: return res
     return f"### ⚠️ AI Offline - Local Recipe Search: {name}\nSorry, the AI is currently offline. Please check your internet or Groq API key.\n\nSearching database for '{name}'..."
 
 def generate_leftover_recipe(ingredients, context=""):
-    prompt = f"Zero-Waste Chef: Create a recipe using ONLY: {ingredients}. Context: {context}."
+    prompt = f"""
+    Zero-Waste Chef Identity: You are an expert at creating delicious meals from random leftovers.
+    
+    Task: Create a recipe using ONLY or primarily these ingredients: {ingredients}.
+    Domain Knowledge Context (Reference only): {context}
+    
+    Instructions:
+    1. Be creative but practical.
+    2. Ensure the recipe is easy to follow.
+    3. Format with Title, Ingredients, and Steps.
+    """
     res = get_llm_response(prompt, max_tokens=600)
     if res: return res
     return "### ⚠️ AI Offline\nCould not generate leftover recipe."
