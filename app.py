@@ -11,7 +11,19 @@ from llm import (
 from retriever import search
 from evaluation.metrics import evaluate
 
+import base64
+from pathlib import Path
+
 # ---- CONFIG ----
+
+# ---- HELPERS ----
+def get_base64_image(image_path):
+    try:
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    except:
+        return ""
+
 # ---- SESSION STATE ----
 if "user" not in st.session_state: st.session_state.user = None
 if "page" not in st.session_state: st.session_state.page = "login"
@@ -19,6 +31,9 @@ if "profile" not in st.session_state: st.session_state.profile = {}
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 
 # ---- STYLING ----
+bg_img_file = "data/img/chef_bg_login.png" if st.session_state.get("page", "login") == "login" else "data/img/chef_bg_inside.png"
+bg_base64 = get_base64_image(bg_img_file)
+
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
@@ -26,7 +41,7 @@ st.markdown(f"""
 /* Main Container Styling */
 .stApp {{
     background: linear-gradient(rgba(11, 12, 16, 0.85), rgba(11, 12, 16, 0.85)), 
-                url('file:///C:/Users/aravi/.gemini/antigravity/brain/c3609f9e-de1a-4c2e-9f3c-2e6ff7090993/{"chef_bg_login_1777482957708.png" if st.session_state.get("page", "login") == "login" else "chef_bg_inside_1777482986897.png"}');
+                url("data:image/png;base64,{bg_base64}");
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -34,17 +49,38 @@ st.markdown(f"""
     color: #C5C6C7;
 }}
 
-/* Transparent Cards */
+/* Responsive Feature Cards */
 .feature-card {{
     background: rgba(31, 40, 51, 0.4);
     backdrop-filter: blur(8px);
     border-radius: 20px;
-    padding: 30px;
+    padding: 2rem;
     border: none;
     transition: all 0.3s ease-in-out;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.3);
 }}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {{
+    .stApp {{
+        background-attachment: scroll; /* Better performance on mobile */
+    }}
+    .feature-card {{
+        padding: 1.2rem;
+        margin-bottom: 15px;
+    }}
+    h1 {{
+        font-size: 2.2rem !important;
+    }}
+    h2 {{
+        font-size: 1.8rem !important;
+    }}
+    h3 {{
+        font-size: 1.4rem !important;
+    }}
+}}
+
 .feature-card:hover {{
     transform: translateY(-5px);
     background: rgba(31, 40, 51, 0.6);

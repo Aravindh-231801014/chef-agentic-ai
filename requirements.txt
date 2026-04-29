@@ -1,5 +1,6 @@
 streamlit
 ollama
+groq
 pandas
 numpy
 faiss-cpu
