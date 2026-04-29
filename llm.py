@@ -5,7 +5,6 @@ import streamlit as st
 from groq import Groq
 
 # ---- LLM CLIENT SELECTION ----
-# Detect if we should use Groq (Cloud) or Ollama (Local)
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY") or os.environ.get("GROQ_API_KEY")
 
 def get_llm_response(prompt, messages=None, temperature=0.2, max_tokens=500):
@@ -14,7 +13,6 @@ def get_llm_response(prompt, messages=None, temperature=0.2, max_tokens=500):
         try:
             client = Groq(api_key=GROQ_API_KEY)
             if messages:
-                # Chat mode
                 chat_completion = client.chat.completions.create(
                     messages=messages,
                     model="llama3-8b-8192",
@@ -22,7 +20,6 @@ def get_llm_response(prompt, messages=None, temperature=0.2, max_tokens=500):
                     max_tokens=max_tokens,
                 )
             else:
-                # Single prompt mode
                 chat_completion = client.chat.completions.create(
                     messages=[{"role": "user", "content": prompt}],
                     model="llama3-8b-8192",
@@ -31,148 +28,74 @@ def get_llm_response(prompt, messages=None, temperature=0.2, max_tokens=500):
                 )
             return chat_completion.choices[0].message.content
         except Exception as e:
-            print(f"Groq Error: {e}")
-            # Fallback to local if possible or mock
+            st.error(f"Groq API Error: {e}. Check your API key in Secrets.")
     
     # Local Ollama Implementation
     try:
         if messages:
-            response = ollama.chat(
-                model="llama3", 
-                messages=messages,
-                options={"temperature": temperature, "num_predict": max_tokens}
-            )
+            response = ollama.chat(model="llama3", messages=messages)
         else:
-            response = ollama.chat(
-                model="llama3", 
-                messages=[{"role": "user", "content": prompt}],
-                options={"temperature": temperature, "num_predict": max_tokens}
-            )
+            response = ollama.chat(model="llama3", messages=[{"role": "user", "content": prompt}])
         return response["message"]["content"]
-    except Exception as e:
-        print(f"Ollama/Local Error: {e}")
+    except:
         return None
 
 # ---- CORE AGENTS ----
 
 def goal_agent(user_input):
     """Identifies user goal."""
-    prompt = f"""
-    You are the Goal Agent for ChefMind-AI. 
-    Analyze the user input and identify the primary intent.
-    
-    Possible Intents:
-    - generate_recipe: User wants a full recipe based on ingredients or dish name.
-    - leftover_mode: User has specific ingredients and wants to make something with ONLY those.
-    - meal_planner: User wants a multi-day (usually 7 days) meal plan.
-    - ask_chef: General cooking questions, tips, or troubleshooting.
-    - nutrition_analysis: User wants nutritional info for a dish or ingredient list.
-    
-    User Input: "{user_input}"
-    
-    Return ONLY the intent name (one of the five above).
-    """
-    res = get_llm_response(prompt, max_tokens=100)
+    prompt = f"Identify intent for: '{user_input}'. Options: generate_recipe, leftover_mode, meal_planner, ask_chef, nutrition_analysis. Return ONLY the intent name."
+    res = get_llm_response(prompt, max_tokens=20)
     if res:
         return res.strip().lower()
     
-    # Fallback based on keywords
+    # Smarter Fallback
     ui = user_input.lower()
-    if "leftover" in ui: return "leftover_mode"
-    if "plan" in ui: return "meal_planner"
-    if "nutrition" in ui or "calorie" in ui: return "nutrition_analysis"
-    if "recipe" in ui or "cook" in ui: return "generate_recipe"
-    return "ask_chef"
+    if any(k in ui for k in ["leftover", "fridge", "have"]): return "leftover_mode"
+    if any(k in ui for k in ["plan", "week", "day"]): return "meal_planner"
+    if any(k in ui for k in ["nutrition", "calorie", "fat"]): return "nutrition_analysis"
+    if any(k in ui for k in ["tip", "how", "secret"]): return "ask_chef"
+    # Default to generate_recipe (most common)
+    return "generate_recipe"
 
 def planner_agent(goal):
-    """Creates execution steps for a goal."""
     plans = {
-        "generate_recipe": ["retrieve", "generate", "scale", "evaluate"],
-        "leftover_mode": ["retrieve", "generate", "evaluate"],
+        "generate_recipe": ["retrieve", "generate", "evaluate"],
+        "leftover_mode": ["retrieve", "generate"],
         "meal_planner": ["generate_plan"],
         "ask_chef": ["chat"],
         "nutrition_analysis": ["analyze"]
     }
-    return plans.get(goal, ["chat"])
+    return plans.get(goal, ["generate_recipe"])
 
 # ---- FEATURE FUNCTIONS ----
 
 def generate_recipe_ai(name, ingredients, cuisine, servings, context=""):
-    """Generates a detailed recipe using RAG context."""
-    prompt = f"""
-    You are a professional Master Chef. 
-    Generate a detailed recipe based on the following:
-    - Dish Name/Input: {name}
-    - User Ingredients: {ingredients}
-    - Preferred Cuisine: {cuisine}
-    - Target Servings: {servings}
-    - Expert Reference Knowledge: {context}
-    
-    STRICT FORMAT:
-    Title: [Dish Name]
-    Description: [Brief description]
-    Ingredients:
-    - [Item] ([Quantity])
-    Steps:
-    1. [Instruction]
-    Nutrition:
-    - Calories: [Value]
-    - Protein: [Value]
-    - Carbs: [Value]
-    - Fats: [Value]
-    """
-    res = get_llm_response(prompt, max_tokens=500)
+    prompt = f"Expert Chef: Generate a detailed {cuisine} recipe for {name} ({servings} servings) using these ingredients if provided: {ingredients}. Context: {context}. Format with Title, Ingredients, and Steps."
+    res = get_llm_response(prompt, max_tokens=800)
     if res: return res
-    return f"### Mock Recipe: {name}\n**Ingredients:**\n- {ingredients}\n- 1 cup Water\n- Salt to taste\n\n**Steps:**\n1. Combine ingredients.\n2. Cook for 20 minutes."
+    return f"### ⚠️ AI Offline - Local Recipe Search: {name}\nSorry, the AI is currently offline. Please check your internet or Groq API key.\n\nSearching database for '{name}'..."
 
 def generate_leftover_recipe(ingredients, context=""):
-    """Generates a recipe using ONLY the provided leftovers."""
-    prompt = f"""
-    You are an expert at Zero-Waste Cooking.
-    Create a delicious recipe using ONLY these ingredients: {ingredients}.
-    You can assume basic pantry staples like oil, salt, and pepper are available.
-    
-    SPECIAL INSTRUCTION: If ingredients like "day-old rice" or "stale bread" are provided, prioritize classic transformation techniques (e.g., Fried Rice, Panzanella, French Toast, or Arancini).
-    
-    Context: {context}
-    
-    Format:
-    Title: ...
-    Ingredients: ...
-    Steps: ...
-    """
-    res = get_llm_response(prompt, max_tokens=400)
-    if res: return res
-    return f"### Mock Leftover Recipe\nUsing: {ingredients}\n\n**Steps:**\n1. Sauté everything in a pan.\n2. Add seasoning."
-
-def generate_meal_plan(days, goal, profile=""):
-    """Generates a multi-day meal plan."""
-    prompt = f"""
-    Generate a {days}-day meal plan.
-    User Profile: {profile}
-    Health Goal: {goal}
-    
-    Provide Breakfast, Lunch, and Dinner for each day.
-    Keep it varied and healthy.
-    """
+    prompt = f"Zero-Waste Chef: Create a recipe using ONLY: {ingredients}. Context: {context}."
     res = get_llm_response(prompt, max_tokens=600)
     if res: return res
-    return f"### Mock {days}-Day Meal Plan\nGoal: {goal}\n- Day 1: Oats, Salad, Grilled Veggies"
+    return "### ⚠️ AI Offline\nCould not generate leftover recipe."
+
+def generate_meal_plan(days, goal, profile=""):
+    prompt = f"Nutritionist: Create a {days}-day meal plan for {goal}. Profile: {profile}."
+    res = get_llm_response(prompt, max_tokens=1000)
+    if res: return res
+    return "### ⚠️ AI Offline\nCould not generate meal plan."
 
 def analyze_nutrition(input_text):
-    """Analyzes nutritional value."""
-    prompt = f"""
-    Provide detailed nutritional information for: {input_text}.
-    Include Calories, Protein, Carbs, and Fats.
-    Also give a health rating (1-10) and why.
-    """
-    res = get_llm_response(prompt, temperature=0.1, max_tokens=300)
+    prompt = f"Analyze nutrition for: {input_text}. Format: Calories, Protein, Carbs, Fat, Health Rating."
+    res = get_llm_response(prompt, max_tokens=400)
     if res: return res
-    return f"### Nutrition Analysis: {input_text}\n- Calories: ~250 kcal\n- Protein: 10g\n- Carbs: 30g"
+    return "### ⚠️ AI Offline\nCould not analyze nutrition."
 
 def chat_with_chef(user_input, history=[]):
-    """General chat with the AI chef."""
     messages = history + [{"role": "user", "content": user_input}]
-    res = get_llm_response("", messages=messages, temperature=0.4, max_tokens=300)
+    res = get_llm_response("", messages=messages, max_tokens=400)
     if res: return res
-    return "I'm currently in 'Offline Mode'. How else can I help with basic tips?"
+    return "I am currently in offline mode. Please reconnect to chat!"
