@@ -6,7 +6,7 @@ import re
 from llm import (
     goal_agent, planner_agent, generate_recipe_ai, 
     generate_leftover_recipe, generate_meal_plan, 
-    analyze_nutrition, chat_with_chef
+    analyze_nutrition, chat_with_chef, get_dish_variants
 )
 from retriever import search
 from evaluation.metrics import evaluate
@@ -267,22 +267,39 @@ def recipe_gen():
     cuisine_options = sorted(list(set(all_cuisines + user_cuisines)))
     cuisine = st.selectbox("Cuisine Style (Select Country/Style)", cuisine_options, index=cuisine_options.index("General"))
     
+    # Variant Discovery Logic
+    if "variants" not in st.session_state: st.session_state.variants = []
+    if "last_dish" not in st.session_state: st.session_state.last_dish = ""
+    
+    if dish_name != st.session_state.last_dish:
+        st.session_state.variants = []
+        st.session_state.last_dish = dish_name
+
+    if dish_name:
+        if st.button("🔍 Discover Top 10 Variants"):
+            with st.spinner(f"Fetching famous {dish_name} variants..."):
+                st.session_state.variants = get_dish_variants(dish_name, cuisine)
+    
+    final_dish = dish_name
+    if st.session_state.variants:
+        final_dish = st.selectbox("Choose a specific variant:", st.session_state.variants)
+    
     if st.button("✨ Generate Recipe"):
-        if not (dish_name or ingredients):
+        if not (final_dish or ingredients):
             st.warning("Please provide a dish name or ingredients.")
         else:
             with st.spinner("Chef AI is orchestrating agents..."):
                 # Goal & Planner Agents
-                goal = goal_agent(dish_name or ingredients)
+                goal = goal_agent(final_dish or ingredients)
                 plan = planner_agent(goal)
                 
                 # RAG Retrieval
-                st.info(f"Agents identified goal: {goal}. Retrieving domain knowledge...")
-                context_data = search(dish_name or ingredients)
+                st.info(f"Agents identified goal: {goal}. Retrieving domain knowledge for {final_dish}...")
+                context_data = search(final_dish or ingredients)
                 context_str = json.dumps(context_data)
                 
                 # Generation
-                recipe = generate_recipe_ai(dish_name or ingredients, ingredients, cuisine, servings, context_str)
+                recipe = generate_recipe_ai(final_dish or ingredients, ingredients, cuisine, servings, context_str)
                 
                 st.markdown("---")
                 st.markdown(recipe)

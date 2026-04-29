@@ -1,6 +1,7 @@
 import ollama
 import json
 import os
+import re
 import streamlit as st
 from groq import Groq
 
@@ -122,3 +123,19 @@ def chat_with_chef(user_input, history=[]):
     res = get_llm_response("", messages=messages, max_tokens=400)
     if res: return res
     return "I am currently in offline mode. Please reconnect to chat!"
+
+def get_dish_variants(dish_name, cuisine):
+    prompt = f"List 10 famous and distinct variants of '{dish_name}' in {cuisine} cuisine (or international if cuisine is General). Return ONLY a JSON list of strings."
+    res = get_llm_response(prompt, max_tokens=300)
+    if not res: return [f"Classic {dish_name}", f"Traditional {dish_name}"]
+    
+    try:
+        # Try to find JSON in the response
+        match = re.search(r'\[.*\]', res, re.DOTALL)
+        if match:
+            return json.loads(match.group())
+        # Fallback to line splitting if JSON fails
+        lines = [line.strip("- 1234567890. ") for line in res.split("\n") if line.strip()]
+        return [l for l in lines if l][:10]
+    except:
+        return [f"Classic {dish_name}", f"Traditional {dish_name}"]
