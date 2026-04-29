@@ -15,14 +15,14 @@ def get_llm_response(prompt, messages=None, temperature=0.2, max_tokens=500):
             if messages:
                 chat_completion = client.chat.completions.create(
                     messages=messages,
-                    model="llama3-8b-8192",
+                    model="llama-3.1-8b-instant",
                     temperature=temperature,
                     max_tokens=max_tokens,
                 )
             else:
                 chat_completion = client.chat.completions.create(
                     messages=[{"role": "user", "content": prompt}],
-                    model="llama3-8b-8192",
+                    model="llama-3.1-8b-instant",
                     temperature=temperature,
                     max_tokens=max_tokens,
                 )
