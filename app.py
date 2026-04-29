@@ -204,6 +204,14 @@ def setup_page():
 # ---- DASHBOARD ----
 def dashboard():
     st.sidebar.markdown(f"### Hello, {st.session_state.user}!")
+    
+    # System Status Indicator
+    from llm import GROQ_API_KEY
+    if GROQ_API_KEY:
+        st.sidebar.success("● AI Engine: Cloud (Groq)")
+    else:
+        st.sidebar.warning("● AI Engine: Local (Ollama)")
+        
     st.sidebar.markdown("---")
     if st.sidebar.button("Logout"):
         st.session_state.user = None
@@ -276,15 +284,8 @@ def recipe_gen():
                 if context_data:
                     ref_recipe = context_data[0]
                     ref_text = f"{ref_recipe.get('title', '')} Ingredients: {', '.join(ref_recipe.get('ingredients', []))}"
-                    scores = evaluate(ref_text, recipe)
-                    
-                    st.markdown("---")
-                    st.markdown("### 📊 AI Quality Metrics")
-                    m1, m2, m3 = st.columns(3)
-                    m1.metric("BLEU Score", scores['BLEU'])
-                    m2.metric("ROUGE-1", scores['ROUGE-1'])
-                    m3.metric("ROUGE-L", scores['ROUGE-L'])
-                    st.caption("Metrics compared against retrieved reference recipe from FAISS database.")
+                    # Scores are now printed to terminal in the evaluate() function
+                    evaluate(ref_text, recipe)
 
 def leftover_mode():
     st.markdown("# 🥕 Leftover Mode")
