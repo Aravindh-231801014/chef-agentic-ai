@@ -1,0 +1,32 @@
+[
+  {
+    "title": "Masala Dosa",
+    "ingredients": ["rice batter", "potato", "onion", "spices"],
+    "steps": [
+      "Prepare dosa batter",
+      "Heat pan and spread batter",
+      "Cook until crispy",
+      "Add potato filling"
+    ]
+  },
+  {
+    "title": "Paneer Butter Masala",
+    "ingredients": ["paneer", "butter", "tomato", "cream", "spices"],
+    "steps": [
+      "Cook tomato gravy",
+      "Add butter and spices",
+      "Add paneer cubes",
+      "Simmer and serve"
+    ]
+  },
+  {
+    "title": "Vegetable Biryani",
+    "ingredients": ["rice", "vegetables", "spices", "onion"],
+    "steps": [
+      "Cook rice",
+      "Prepare vegetable masala",
+      "Layer rice and masala",
+      "Cook on low heat"
+    ]
+  }
+]

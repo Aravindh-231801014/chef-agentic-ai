@@ -1,0 +1,11 @@
+streamlit
+ollama
+pandas
+numpy
+faiss-cpu
+sentence-transformers
+nltk
+rouge-score
+torch
+torchvision
+torchaudio
