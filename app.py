@@ -257,8 +257,15 @@ def recipe_gen():
         
     servings = st.slider("Servings", 1, 10, 2)
     
+    all_cuisines = [
+        "General", "Indian", "Italian", "Chinese", "Mexican", "Japanese", 
+        "French", "Thai", "American", "Mediterranean", "Middle Eastern", 
+        "Spanish", "Korean", "Greek", "Vietnamese", "Turkish", "Brazilian", "Moroccan"
+    ]
     user_cuisines = st.session_state.profile.get("cuisine", [])
-    cuisine = st.selectbox("Cuisine Style", ["General"] + user_cuisines)
+    # Combine user favorites with the full list, removing duplicates
+    cuisine_options = sorted(list(set(all_cuisines + user_cuisines)))
+    cuisine = st.selectbox("Cuisine Style (Select Country/Style)", cuisine_options, index=cuisine_options.index("General"))
     
     if st.button("✨ Generate Recipe"):
         if not (dish_name or ingredients):
