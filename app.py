@@ -299,7 +299,7 @@ def recipe_gen():
                 context_str = json.dumps(context_data)
                 
                 # Generation
-                recipe = generate_recipe_ai(final_dish or ingredients, ingredients, cuisine, servings, context_str)
+                recipe = generate_recipe_ai(final_dish or ingredients, ingredients, cuisine, servings, context_str, json.dumps(st.session_state.profile))
                 
                 st.markdown("---")
                 st.markdown(recipe)
@@ -323,7 +323,7 @@ def leftover_mode():
             st.warning("Please list some ingredients.")
         else:
             with st.spinner("Creating magic with leftovers..."):
-                recipe = generate_leftover_recipe(items)
+                recipe = generate_leftover_recipe(items, profile=json.dumps(st.session_state.profile))
                 st.markdown("---")
                 st.markdown(recipe)
 

@@ -71,9 +71,11 @@ def planner_agent(goal):
 
 # ---- FEATURE FUNCTIONS ----
 
-def generate_recipe_ai(name, ingredients, cuisine, servings, context=""):
+def generate_recipe_ai(name, ingredients, cuisine, servings, context="", profile="{}"):
     prompt = f"""
     Expert Chef Identity: You are a world-class chef specialized in {cuisine} cuisine.
+    
+    User Profile (DIETARY RESTRICTIONS): {profile}
     
     Task: Generate a detailed {cuisine} recipe for '{name}' ({servings} servings).
     User Ingredients (use these if provided): {ingredients}
@@ -81,25 +83,30 @@ def generate_recipe_ai(name, ingredients, cuisine, servings, context=""):
     Domain Knowledge Context (Reference only): {context}
     
     CRITICAL INSTRUCTIONS:
-    1. If the provided context is for a different cuisine than {cuisine}, IGNORE the context and use your own knowledge to create an authentic {cuisine} recipe.
-    2. Do NOT mention that there is a 'mistake' in the ingredients or context. Just provide the best {cuisine} recipe possible.
-    3. Ensure the flavor profile, techniques, and terminology are authentic to {cuisine}.
+    1. STRICT DIET & ALLERGY COMPLIANCE: 
+       - If the user is 'Vegetarian', you MUST NOT use any meat.
+       - If the user has 'Allergies', you MUST NOT use those ingredients.
+       - If the requested dish '{name}' normally contains meat but the user is Vegetarian, DO NOT make the meat version. Instead, make a delicious VEGETARIAN version (e.g., replace chicken with Paneer, Tofu, or Mushrooms) and explain the substitution.
+    2. If the provided context is for a different cuisine than {cuisine}, IGNORE the context and use your own knowledge.
+    3. Do NOT mention that there is a 'mistake' in the context.
     4. Format the output with clear sections: Title, Ingredients, and Steps.
     """
     res = get_llm_response(prompt, max_tokens=1000)
     if res: return res
     return f"### ⚠️ AI Offline - Local Recipe Search: {name}\nSorry, the AI is currently offline. Please check your internet or Groq API key.\n\nSearching database for '{name}'..."
 
-def generate_leftover_recipe(ingredients, context=""):
+def generate_leftover_recipe(ingredients, context="", profile="{}"):
     prompt = f"""
     Zero-Waste Chef Identity: You are an expert at creating delicious meals from random leftovers.
+    
+    User Profile: {profile}
     
     Task: Create a recipe using ONLY or primarily these ingredients: {ingredients}.
     Domain Knowledge Context (Reference only): {context}
     
     Instructions:
     1. Be creative but practical.
-    2. Ensure the recipe is easy to follow.
+    2. STRICTLY respect dietary preferences (e.g., no meat if Vegetarian) and avoid all listed allergies in the User Profile.
     3. Format with Title, Ingredients, and Steps.
     """
     res = get_llm_response(prompt, max_tokens=600)
