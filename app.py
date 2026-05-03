@@ -6,7 +6,8 @@ import re
 from llm import (
     goal_agent, planner_agent, generate_recipe_ai, 
     generate_leftover_recipe, generate_meal_plan, 
-    analyze_nutrition, chat_with_chef, get_dish_variants
+    analyze_nutrition, chat_with_chef, get_dish_variants,
+    check_meat_conflict
 )
 from retriever import search
 from evaluation.metrics import evaluate
@@ -302,28 +303,46 @@ def recipe_gen():
         if not (final_dish or ingredients):
             st.warning("Please provide a dish name or ingredients.")
         else:
-            with st.spinner("Chef AI is orchestrating agents..."):
-                # Goal & Planner Agents
-                goal = goal_agent(final_dish or ingredients)
-                plan = planner_agent(goal)
-                
-                # RAG Retrieval
-                st.info(f"Agents identified goal: {goal}. Retrieving domain knowledge for {final_dish}...")
-                context_data = search(final_dish or ingredients)
-                context_str = json.dumps(context_data)
-                
-                # Generation
-                recipe = generate_recipe_ai(final_dish or ingredients, ingredients, cuisine, servings, context_str, json.dumps(st.session_state.profile))
-                
-                st.markdown("---")
-                st.markdown(recipe)
-                
-                # Evaluation
-                if context_data:
-                    ref_recipe = context_data[0]
-                    ref_text = f"{ref_recipe.get('title', '')} Ingredients: {', '.join(ref_recipe.get('ingredients', []))}"
-                    # Scores are now printed to terminal in the evaluate() function
-                    evaluate(ref_text, recipe)
+            # Check for dietary conflict
+            is_veg_user = st.session_state.profile.get("diet") == "Vegetarian"
+            dish_type = check_meat_conflict(final_dish)
+            
+            if is_veg_user and dish_type == "meat":
+                st.warning(f"⚠️ You are Vegetarian, but '{final_dish}' is traditionally a meat dish.")
+                st.info("I can replace the meat with a Veg substitute (like Paneer or Soya).")
+                if st.button("✅ Yes, Generate Veg Version", key="confirm_veg"):
+                    # Use a separate flag to trigger generation
+                    st.session_state.force_generate = True
+                else:
+                    st.stop()
+            else:
+                st.session_state.force_generate = True
+
+    # Execution Block (after confirmation or if no conflict)
+    if st.session_state.get("force_generate"):
+        st.session_state.force_generate = False # Reset
+        with st.spinner("Chef AI is orchestrating agents..."):
+            # Goal & Planner Agents
+            goal = goal_agent(final_dish or ingredients)
+            plan = planner_agent(goal)
+            
+            # RAG Retrieval
+            st.info(f"Agents identified goal: {goal}. Retrieving domain knowledge for {final_dish}...")
+            context_data = search(final_dish or ingredients)
+            context_str = json.dumps(context_data)
+            
+            # Generation
+            recipe = generate_recipe_ai(final_dish or ingredients, ingredients, cuisine, servings, context_str, json.dumps(st.session_state.profile))
+            
+            st.markdown("---")
+            st.markdown(recipe)
+            
+            # Evaluation
+            if context_data:
+                ref_recipe = context_data[0]
+                ref_text = f"{ref_recipe.get('title', '')} Ingredients: {', '.join(ref_recipe.get('ingredients', []))}"
+                # Scores are now printed to terminal in the evaluate() function
+                evaluate(ref_text, recipe)
 
 def leftover_mode():
     st.markdown("# 🥕 Leftover Mode")

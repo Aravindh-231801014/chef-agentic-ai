@@ -146,3 +146,10 @@ def get_dish_variants(dish_name, cuisine):
         return [l for l in lines if l][:10]
     except:
         return [f"Classic {dish_name}", f"Traditional {dish_name}"]
+
+def check_meat_conflict(dish_name):
+    prompt = f"Is the dish '{dish_name}' traditionally non-vegetarian (contains meat, fish, or egg)? Return ONLY 'meat' or 'veg'."
+    res = get_llm_response(prompt, max_tokens=10)
+    if res and "meat" in res.lower():
+        return "meat"
+    return "veg"
