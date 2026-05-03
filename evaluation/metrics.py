@@ -1,4 +1,4 @@
-from nltk.translate.bleu_score import sentence_bleu
+from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from rouge_score import rouge_scorer
 
 
@@ -8,8 +8,9 @@ def evaluate(reference, generated):
     reference_tokens = [reference.split()]
     generated_tokens = generated.split()
 
-    # BLEU
-    bleu = sentence_bleu(reference_tokens, generated_tokens)
+    # BLEU with smoothing
+    chencherry = SmoothingFunction()
+    bleu = sentence_bleu(reference_tokens, generated_tokens, smoothing_function=chencherry.method1)
 
     # ROUGE
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rougeL'], use_stemmer=True)
