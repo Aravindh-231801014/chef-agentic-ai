@@ -177,28 +177,42 @@ def login_page():
 # ---- PROFILE SETUP ----
 def setup_page():
     st.markdown("<div class='feature-card'>", unsafe_allow_html=True)
-    st.markdown("## 👤 First Time Setup")
+    st.markdown("## 👤 Profile Setup")
     st.markdown("<p>Help us understand your cooking preferences for better recommendations.</p>", unsafe_allow_html=True)
     
+    # Pre-load existing data
+    p = st.session_state.profile
+    
+    diet_list = ["Vegetarian", "Non-Vegetarian", "Vegan", "Keto", "Paleo"]
+    goal_list = ["Weight Loss", "Muscle Gain", "Healthy Living", "Balanced Diet"]
+    skill_list = ["Beginner", "Intermediate", "Expert"]
+    
     with st.form("profile_wizard"):
-        diet = st.selectbox("Diet Type", ["Vegetarian", "Non-Vegetarian", "Vegan", "Keto", "Paleo"])
-        allergies = st.text_input("Allergies (comma separated, leave blank if none)")
-        cuisine = st.multiselect("Favorite Cuisines", ["Indian", "Italian", "Chinese", "Mexican", "Japanese", "French", "Thai"])
-        goal = st.selectbox("Health Goal", ["Weight Loss", "Muscle Gain", "Healthy Living", "Balanced Diet"])
-        skill = st.select_slider("Cooking Skill Level", options=["Beginner", "Intermediate", "Expert"])
+        diet = st.selectbox("Diet Type", diet_list, 
+                            index=diet_list.index(p.get("diet", "Vegetarian")) if p.get("diet") in diet_list else 0)
+        
+        allergies = st.text_input("Allergies (comma separated, leave blank if none)", 
+                                  value=p.get("allergies", ""))
+        
+        goal = st.selectbox("Health Goal", goal_list,
+                            index=goal_list.index(p.get("goal", "Healthy Living")) if p.get("goal") in goal_list else 2)
+        
+        skill = st.select_slider("Cooking Skill Level", options=skill_list,
+                                 value=p.get("skill", "Beginner"))
         
         if st.form_submit_button("Save Profile"):
             profile = {
                 "diet": diet,
                 "allergies": allergies,
-                "cuisine": cuisine,
                 "goal": goal,
                 "skill": skill
             }
             save_profile(profile)
             st.session_state.profile = profile
-            st.session_state.page = "dashboard"
-            st.rerun()
+            st.success("Profile saved successfully!")
+            if st.session_state.page == "setup":
+                st.session_state.page = "dashboard"
+                st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ---- DASHBOARD ----
