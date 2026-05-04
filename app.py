@@ -350,10 +350,15 @@ def recipe_gen():
             st.markdown(recipe)
             
             # Evaluation
+            st.info("Calculating Quality Metrics (Bias, Fairness, etc.). Check terminal...")
+            ref_text = ""
             if context_data:
                 ref_recipe = context_data[0]
                 ref_text = f"{ref_recipe.get('title', '')} Ingredients: {', '.join(ref_recipe.get('ingredients', []))}"
-                evaluate(ref_text, recipe)
+            else:
+                ref_text = f"{final_dish} {ingredients}" # Fallback reference
+            
+            evaluate(ref_text, recipe)
 
 def leftover_mode():
     st.markdown("# 🥕 Leftover Mode")
@@ -370,6 +375,10 @@ def leftover_mode():
                 recipe = generate_leftover_recipe(items, profile=json.dumps(st.session_state.profile))
                 st.markdown("---")
                 st.markdown(recipe)
+
+                # Evaluation for Leftovers
+                st.info("Calculating Quality Metrics... Check terminal.")
+                evaluate(items, recipe)
 
 def meal_planner():
     st.markdown("# 📅 Meal Planner")
