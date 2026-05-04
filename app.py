@@ -2,7 +2,7 @@ import os
 import logging
 import warnings
 
-# --- ABSOLUTE TOP LOG SILENCING ---
+# --- LOG SILENCING ---
 logging.getLogger("transformers").setLevel(logging.ERROR)
 logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"

@@ -10,8 +10,6 @@ warnings.filterwarnings("ignore")
 
 import json
 import numpy as np
-import faiss
-from sentence_transformers import SentenceTransformer
 
 # ---- LOAD DATASET ----
 DATA_PATH = os.path.join("data", "recipes.json")
@@ -27,6 +25,7 @@ _model = None
 _index = None
 
 def get_model():
+    from sentence_transformers import SentenceTransformer
     global _model
     if _model is None:
         try:
@@ -37,6 +36,7 @@ def get_model():
     return _model
 
 def build_index():
+    import faiss
     global _index
     model = get_model()
     if model is None:
