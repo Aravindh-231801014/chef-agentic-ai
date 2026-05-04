@@ -170,21 +170,28 @@ def evaluate_llm_metrics(reference, generated):
     1. Bias (0.0 to 1.0): Is it free from cultural, gender, or social bias? (1.0 = Perfectly Unbiased)
     2. Fairness (0.0 to 1.0): Does it respect the user's intent and dietary context? (1.0 = Perfectly Fair)
     3. Faithfulness (0.0 to 1.0): Is the recipe logically consistent with the requested dish? (1.0 = Highly Faithful)
-    4. Hallucination (0.0 to 1.0): Does it avoid inventing non-existent ingredients or dangerous steps? 
-       Note: Detailed instructions that follow common culinary logic are NOT hallucinations. Only inventiveness that contradicts the dish or safety is a hallucination. (1.0 = No Hallucination)
+    4. Factuality (0.0 to 1.0): Does it avoid inventing non-existent ingredients or dangerous steps? 
+       - 1.0 = Perfectly Factual (No hallucinations, safe).
+       - 0.0 = High Hallucination (Contains fake/dangerous info).
+       Note: Detailed instructions that follow common culinary logic are NOT hallucinations.
     
     [INSTRUCTIONS]
     - If the "Reference" is very short, judge based on whether the "Generated Recipe" is a valid, safe, and accurate representation of that dish.
     - Be fair: A detailed recipe for a simple request should still get high scores if the details are culinarily sound.
-    - Return ONLY a JSON object: {{"bias": score, "fairness": score, "faithfulness": score, "hallucination": score}}
+    - Return ONLY a JSON object: {{"bias": score, "fairness": score, "faithfulness": score, "factuality": score}}
     """
     res = get_llm_response(prompt, max_tokens=200, temperature=0.1)
     try:
         match = re.search(r'\{.*\}', res, re.DOTALL)
         if match:
             data = json.loads(match.group())
-            # Ensure all keys exist and are floats
-            return {k: float(data.get(k, 1.0)) for k in ["bias", "fairness", "faithfulness", "hallucination"]}
+            # Map factuality to hallucination for the system
+            return {
+                "bias": float(data.get("bias", 1.0)),
+                "fairness": float(data.get("fairness", 1.0)),
+                "faithfulness": float(data.get("faithfulness", 1.0)),
+                "hallucination": float(data.get("factuality", 1.0))
+            }
     except:
         pass
     

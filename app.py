@@ -1,7 +1,17 @@
+import os
+import logging
+import warnings
+
+# --- ABSOLUTE TOP LOG SILENCING ---
+logging.getLogger("transformers").setLevel(logging.ERROR)
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
+warnings.filterwarnings("ignore")
+
 import streamlit as st
 st.set_page_config(page_title="ChefMind-AI", page_icon="🍳", layout="wide")
 import json
-import os
 import re
 from llm import (
     goal_agent, planner_agent, generate_recipe_ai, 

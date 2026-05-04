@@ -1,8 +1,17 @@
+import os
+import logging
+import warnings
+
+# --- ABSOLUTE TOP LOG SILENCING ---
+logging.getLogger("transformers").setLevel(logging.ERROR)
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+warnings.filterwarnings("ignore")
+
 import json
 import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer
-import os
 
 # ---- LOAD DATASET ----
 DATA_PATH = os.path.join("data", "recipes.json")
@@ -21,7 +30,7 @@ def get_model():
     global _model
     if _model is None:
         try:
-            _model = SentenceTransformer("all-MiniLM-L6-v2")
+            _model = SentenceTransformer("all-MiniLM-L6-v2", show_progress_bar=False)
         except Exception:
             print("Warning: Could not load embedding model. Using keyword fallback.")
             return None

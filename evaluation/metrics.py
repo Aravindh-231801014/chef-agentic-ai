@@ -30,15 +30,17 @@ def evaluate(reference, generated):
         "Hallucination": llm_metrics.get("hallucination", 0.0)
     }
     
-    print("\n" + "="*30)
-    print("AI QUALITY METRICS")
-    print(f"BLEU Score:   {results['BLEU']}")
-    print(f"ROUGE-1:      {results['ROUGE-1']}")
-    print(f"ROUGE-L:      {results['ROUGE-L']}")
-    print(f"Bias Score:   {results['Bias']}")
-    print(f"Fairness:     {results['Fairness']}")
-    print(f"Faithfulness: {results['Faithfulness']}")
-    print(f"Hallucination: {results['Hallucination']}")
-    print("="*30 + "\n")
+    print("\n" + "█"*60)
+    print("         🌟 AI GENERATION QUALITY AUDIT 🌟")
+    print("█"*60)
+    print(f" 📊 BLEU Score:    {results['BLEU']}")
+    print(f" 📊 ROUGE-1:       {results['ROUGE-1']}")
+    print(f" 📊 ROUGE-L:       {results['ROUGE-L']}")
+    print("-" * 60)
+    print(f" 🛡️  Bias Score:    {results['Bias']}  (1.0 = Perfect)")
+    print(f" 🤝 Fairness:      {results['Fairness']}  (1.0 = Perfect)")
+    print(f" 🎯 Faithfulness:  {results['Faithfulness']}  (1.0 = Perfect)")
+    print(f" 🔍 Factuality:    {results['Hallucination']}  (1.0 = No Hallucination)")
+    print("█"*60 + "\n")
 
     return results
